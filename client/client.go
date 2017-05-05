@@ -5,22 +5,32 @@ import (
 	"log"
 	"net"
 	"time"
-
+	"strconv"
 	"github.com/gansidui/gotcp/examples/echo"
 )
 
 func main() {
+	var connCount = 10
+
+	for j := 0;j < connCount; j++{
+		go tcpClient("uid_"+strconv.Itoa(j))
+	}
+
+	for{
+		time.Sleep(time.Second)
+	}
+}
+
+func tcpClient(uid string){
 	tcpAddr, err := net.ResolveTCPAddr("tcp4", "127.0.0.1:8989")
 	checkError(err)
 	conn, err := net.DialTCP("tcp", nil, tcpAddr)
 	checkError(err)
 
 	echoProtocol := &echo.EchoProtocol{}
-
-	// ping <--> pong
 	for i := 0; i < 3; i++ {
 		// write
-		conn.Write(echo.NewEchoPacket([]byte("hello"), false).Serialize())
+		conn.Write(echo.NewEchoPacket([]byte("{\"uid\":\"" +uid + "\"}"), false).Serialize())
 
 		// read
 		p, err := echoProtocol.ReadPacket(conn)

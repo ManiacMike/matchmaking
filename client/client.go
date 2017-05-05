@@ -7,6 +7,7 @@ import (
 	"time"
 	"strconv"
 	"github.com/gansidui/gotcp/examples/echo"
+	"encoding/json"
 )
 
 func main() {
@@ -27,20 +28,31 @@ func tcpClient(uid string){
 	conn, err := net.DialTCP("tcp", nil, tcpAddr)
 	checkError(err)
 
-	echoProtocol := &echo.EchoProtocol{}
-	for i := 0; i < 3; i++ {
-		// write
-		conn.Write(echo.NewEchoPacket([]byte("{\"uid\":\"" +uid + "\"}"), false).Serialize())
+	startPacket := map[string]interface{}{
+		"game":	"csgo",
+		"mode": "competitive",
+		"pid":       uid,
+		"gid":        0,
+		"maps":  []string{},
+	}
+	packetBody, err := json.Marshal(startPacket)
+	checkError(err)
+	// return string(body)
 
-		// read
+	// for i := 0; i < 3; i++ {
+		// write
+	conn.Write(echo.NewEchoPacket(packetBody, false).Serialize())
+
+	// read
+	echoProtocol := &echo.EchoProtocol{}
+	for{
 		p, err := echoProtocol.ReadPacket(conn)
 		if err == nil {
 			echoPacket := p.(*echo.EchoPacket)
 			fmt.Printf("Server reply:[%v] [%v]\n", echoPacket.GetLength(), string(echoPacket.GetBody()))
 		}
-
-		time.Sleep(2 * time.Second)
 	}
+	// }
 
 	conn.Close()
 }
